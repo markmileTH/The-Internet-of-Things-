@@ -1,0 +1,27 @@
+int sw = D8;
+int hemidity = A0;
+void setup() {
+
+  Serial.begin(9600);
+  pinMode(sw, HIGH);
+
+}
+
+void loop() {
+  int sh = analogRead(hemidity);
+  int outputValue = 0;
+  outputValue = map(sh, 0, 1023, 100, 0);
+  Serial.print("ความชื้นในดิน: ");
+  Serial.print(outputValue);
+  if (outputValue < 40) {
+    Serial.println("เปิดน้ำ!");
+    digitalWrite(sw, HIGH);
+    delay(300);
+    digitalWrite(sw, LOW);
+  }
+  else {
+    Serial.println("ปิดน้ำ!");
+    digitalWrite(sw, LOW);
+  }
+  delay(1000);
+}
