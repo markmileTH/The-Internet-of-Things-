@@ -1,0 +1,55 @@
+#include <SoftwareSerial.h>
+#include <Wire.h>
+#define RE 8
+#define DE 7
+
+int ph ;
+int ph2 ;
+int san_h = A0;
+int val = 0;
+int warter = A1;
+int warter_v = 0;
+byte values[11];
+int vvv = A2;
+int val2 = 0;
+int ldr = A3;
+int led = 11;
+SoftwareSerial mod(2, 3);
+void setup() {
+  Serial.begin(9600);
+  mod.begin(4800);
+  pinMode(RE, OUTPUT);
+  pinMode(DE, OUTPUT);
+  pinMode(ldr, INPUT);
+  pinMode(led, OUTPUT);
+
+}
+
+void loop() {
+  int ldrVal = analogRead(ldr);
+  warter_v = analogRead(warter);
+  val = analogRead(san_h);  //อ่านค่าสัญญาณ analog ขา5 ที่ต่อกับ Soil Moisture Sensor Module v1
+  val2 = analogRead(vvv);
+  ph = val2 / 10;
+  ph2 = val2 % 10;
+  Serial.print("PH: ");
+  Serial.print(ph);
+  Serial.print(".");
+  Serial.print(ph2);
+  Serial.println(" pH");
+  Serial.print("ความชื้นในดิน = "); // พิมพ์ข้อมความส่งเข้าคอมพิวเตอร์ "val = "
+  Serial.println(val); // พิมพ์ค่าของตัวแปร val
+  Serial.print("warter = "); // พิมพ์ข้อมความส่งเข้าคอมพิวเตอร์ "val = "
+  Serial.println(warter_v); // พิมพ์ค่าของตัวแปร val
+  Serial.println("LDR Sensor");
+  Serial.println(ldrVal);
+ 
+  if (ldrVal > 650) {
+    digitalWrite(led, HIGH);
+  } else {
+    digitalWrite(led, LOW);
+  }
+  delay(1000);
+
+
+}
