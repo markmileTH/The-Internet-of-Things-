@@ -1,0 +1,79 @@
+
+#include <ThingSpeak.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include "DHT.h"
+#include <ArduinoJson.h>
+#include <time.h>
+
+const char* ssid = "3BB_B1_130_2.4GHz";
+const char* pass = "410151044";
+
+DHT dht;
+ESP8266WebServer server(80);
+DynamicJsonDocument doc (1024);
+WiFiClient client;
+unsigned long myChannelNumber = 1826094;
+const char * myWriteAPIKey = "JU880GBMJ199J144";
+int statusCode = 0;
+void setup() {
+  ThingSpeak.begin(client);
+  dht.setup(D4);
+  Serial.begin(9600);
+  pinMode(D6, OUTPUT);
+  digitalWrite(D6, HIGH);
+  WiFi.begin(ssid, pass);
+  wifi_init();
+  Client_Send();
+}
+
+void loop() {
+  server.handleClient();
+  statusCode = ThingSpeak.readMultipleFields(myChannelNumber);
+  if (statusCode == 200)
+  {
+    int Humidity = ThingSpeak.getFieldAsInt(1); // Field 1
+    int Temperature = ThingSpeak.getFieldAsInt(2); // Field 2
+    int Ligth = ThingSpeak.getFieldAsInt(3);
+    int Led_status = ThingSpeak.getFieldAsInt(4);
+    Serial.println("Humidity: " + String(Humidity));
+    Serial.println("Temperature " + String(Temperature));
+    Serial.println("Ligth " + String(Ligth));
+    Serial.println("Led_status " + String(Led_status));
+  }
+  else {
+    Serial.println("HTTP error code " + String(statusCode));
+  }
+  Serial.println();
+  delay(5000); // no need to fetch too often
+}
+
+
+void wifi_init() {
+  WiFi.begin(ssid, pass);
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Connecting... ");
+    Serial.printf("Connection Status: %d\n", WiFi.status());
+    delay(1000);
+  }
+  Serial.print("Wi-Fi connected.");
+  Serial.print("IP Address : ");
+  Serial.println(WiFi.localIP());
+}
+
+
+void Client_Get () {
+  server.handleClient();
+  statusCode = ThingSpeak.readMultipleFields(myChannelNumber);
+  if (statusCode == 200)
+  {
+    int Humidity = ThingSpeak.getFieldAsInt(1); // Field 1
+    int Temperature = ThingSpeak.getFieldAsInt(2); // Field 2
+    int Ligth = ThingSpeak.getFieldAsInt(3);
+    int Led_status = ThingSpeak.getFieldAsInt(4);
+    Serial.println("Humidity: " + String(Humidity));
+    Serial.println("Temperature " + String(Temperature));
+    Serial.println("Ligth " + String(Ligth));
+    Serial.println("Led_status " + String(Led_status));
+  }
+}
