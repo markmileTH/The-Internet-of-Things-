@@ -1,0 +1,140 @@
+
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <Wire.h>
+#include "DHT.h"
+#define DHTPIN D4
+#include <ArduinoJson.h>
+#define SANDPIN D3
+#define LEDPIN D5
+#define BRIGHTPIN D0
+
+#include <time.h>
+#include "LiquidCrystal_I2C.h"
+DHT dht;
+ESP8266WebServer server(80);
+DynamicJsonDocument doc (1024);
+LiquidCrystal_I2C lcd(0x3F, 16, 2);
+const char* ssid = "3BB_B1_130_2.4GHz";
+const char* pass = "410151044";
+int analogPin = A0;
+void setup() {
+
+  lcd.begin();
+  lcd.backlight();
+  dht.setup(DHTPIN);
+  Serial.begin(9600);
+  pinMode(LEDPIN, OUTPUT);
+  digitalWrite(LEDPIN, HIGH);
+  WiFi_connect();
+  server.begin();
+  server.on("/hello", hello);
+  server.on("/data", getJson);
+  server.on("/ledon", []() {
+    digitalWrite(LEDPIN, HIGH);
+    server.send(200, "text / plain", "led on");
+
+  });
+  server.on("/ledoff", []() {
+    digitalWrite(LEDPIN, LOW);
+    server.send(200, "text / plain", "led off");
+
+  });
+
+}
+
+void WiFi_connect () {
+  WiFi.begin(ssid, pass);
+  Serial.println("Connecting......");
+  while (WiFi.status() !=  WL_CONNECTED) {
+    //    //    Serial.printf("Connect Status: % d\n", WiFi.status());
+    Serial.print(".");
+    delay(1000);
+
+  }
+  Serial.println(" Wi - Fi Connecting.");
+  Serial.print(" IP address : ");
+  Serial.println(WiFi.localIP());
+  lcd.setCursor(0, 0);
+  lcd.print(WiFi.localIP());
+  lcd.setCursor(0, 1);
+  lcd.print("Coppy to browser!");
+
+}
+
+
+void loop () {
+  server.handleClient();
+
+
+}
+
+
+
+
+
+void hello () {
+  static String responseHTML = F(""
+                                 " < !doctype html >              "
+                                 "<html>                       "
+                                 " <head>                      "
+                                 "   <title>Hello ITD @ WU < / title > "
+                                 " < / head >                      "
+                                 " <body>                      "
+                                 "   <h1> hello IOT world < / h1 > "
+                                 " < / body >                       "
+                                 " < / html > ");
+  server.send (200, "text/html", responseHTML.c_str() );
+}
+
+void dth_modu () {
+  int humidity = dht.getHumidity();
+  float temperature = dht.getTemperature();
+  Serial.print("\t");
+  Serial.print(humidity, 1);
+  Serial.print("\t\t");
+  Serial.print(temperature, 1);
+  Serial.print("\t\t");
+  Serial.println("");
+}
+
+
+
+
+void getJson () {
+  String output;
+  time_t now;
+  time(&now);
+
+  int sand_h_v = analogRead(SANDPIN);
+  if (sand_h_v > 600) {
+    sand_h_v  - 300;
+  }
+  else {
+    sand_h_v + 300;
+  }
+  int saneval = (sand_h_v * 100) / 1023;
+  //int sensorValue = digitalRead(analogPin);
+  int led_status = digitalRead(LEDPIN);
+  doc["DHT_Temp"] = dht.getTemperature();
+  doc["DHT_Humidity"] = dht.getHumidity();
+  doc["LIGTH"] = analogRead(BRIGHTPIN);
+  if (led_status == 1)
+  {
+    doc["LED_STATUS"] = "ON";
+  }
+  else
+  {
+    doc["LED_STATUS"] = "OFF";
+  }
+  doc["Last_update"] = ctime(&now);
+  doc["light_concentration"] = analogRead(analogPin);
+  doc["sand_humidity"] = (saneval);
+  serializeJson(doc, output);
+  server.sendHeader(F("Access-Control-Allow-Origin"), F("*"));
+  server.sendHeader(F("Access-Control-Max-Age"), F("600"));
+  server.sendHeader(F("Access-Control-Allow-Methods"), F("PUT,POST,GET,OPTIONS"));
+  server.sendHeader(F("Access-Control-Allow-Headers"), F("*"));
+  server.send(200, "application/json", output);
+
+}
